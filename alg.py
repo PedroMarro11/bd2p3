@@ -42,7 +42,7 @@ def getPiezasConectadas(driver, pieza):
         
     result = driver.execute_query(
         """
-        MATCH (p:PIEZA)-[r:conecta_a]-(p2:PIEZA)
+        MATCH (p:PIEZA)-[r:conecta_a]-(p2:PIEZA {habilitada: true})
         WHERE elementId(p) = $pieza
         RETURN p.id AS pieza_id, r.conectorIn AS conector_in, r.conectorFin AS conector_out, p2.id AS pieza_conectada, elementId(p2) AS pieza_conectada_id
         """, pieza=pieza
@@ -66,7 +66,7 @@ def resolver(driver, rompecabezas, piezaIni):
     
     """
     numPiezas = getNumPiezas(driver, rompecabezas)
-    piezas_puestas = []
+    piezas_puestas = [piezaIni]
     stack = getPiezasConectadas(driver, returnId(driver, piezaIni, rompecabezas))
     ruta = []
     notFound = True
@@ -74,16 +74,15 @@ def resolver(driver, rompecabezas, piezaIni):
    
 
     while notFound and connectionsLeft:
-        propuesta = stack[0] if stack else None
-
-        if not propuesta:
-            connectionsLeft = False
-            break
 
         # Ordenar: primero los que NO tienen None en los conectores
         stack.sort(key=lambda x: (x["conector_ini"] is None or x["conector_fin"] is None))
         #print(propuesta)
+        propuesta = stack[0] if stack else None
         pieza_propuesta = propuesta["pieza_fin"]
+        if not propuesta:
+            connectionsLeft = False
+            break
 
         if pieza_propuesta not in piezas_puestas:
             ruta.append(propuesta)
@@ -111,6 +110,6 @@ def rutaPrinter(ruta):
 
 # Example usage
 
-ruta = resolver(driver, "2 delfines y una ballena", 1)
+ruta = resolver(driver, "2 delfines y una ballena", 11)
 
 rutaPrinter(ruta)
